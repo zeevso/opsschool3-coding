@@ -34,8 +34,7 @@ def read_json():
         return json.load(file)
 
 
-def init_ranges():
-    data = read_json()
+def init_ranges(data):
     buckets = data['buckets']
     buckets.append(0)
     buckets.sort()
@@ -72,7 +71,7 @@ def write_output_file (persons_ranges):
 
 def main():
     data = read_json()
-    buckets = init_ranges()
+    buckets = init_ranges(data)
     persons_ranges = manage_person_ranges(buckets, data)
     write_output_file(persons_ranges)
 
