@@ -7,6 +7,9 @@ Exercises for the OOPS School 3, Coding in Python, Session 1, Assignment 2
 3. Fill in data structure
 4. Dump data to yaml file
     4.1 Library 'PyYAML 3.13' should be installed separately to the standard Python distribution
+
+Ze'ev 5/11/2018
+try - except added
  """
 
 import json
@@ -30,13 +33,20 @@ class PersonsRange(object):
 
 
 def read_json():
-    with open(INPUT_FILE) as file:
-        return json.load(file)
+    try:
+        with open(INPUT_FILE) as file:
+            return json.load(file)
+    except ValueError:
+        print('Error in format of {} file'.format(INPUT_FILE))
+    except IOError:
+        print("Error opening file {} ".format(INPUT_FILE))
 
 
-def init_data(data):
-    data = read_json()
-    buckets = data['buckets']
+def init_ranges(data):
+    try:
+        buckets = data['buckets']
+    except KeyError:
+        return "Wrong file format {}.format(INPUT_FILE)"
     buckets.append(0)
     buckets.sort()
     return(buckets)
@@ -46,6 +56,7 @@ def manage_person_ranges(buckets, data):
     persons_ranges = []
     for min_age, max_age in zip(buckets[:-1], buckets[1:]):
         persons_ranges.append(PersonsRange(min_age, max_age))
+
     biggest_age = max([age for name, age in data['ppl_ages'].items()])
 
     for name, age in data['ppl_ages'].items():
@@ -63,15 +74,18 @@ def manage_person_ranges(buckets, data):
 
 
 def write_output_file (persons_ranges):
-    with open(OUTPUT_FILE, "w") as file:
-         for persons_range in persons_ranges:
-             print_dict = {'{}-{}'.format(persons_range.min_age, persons_range.max_age): persons_range.names}
-             yaml.dump(print_dict, file, default_flow_style=False)
+    try:
+        with open(OUTPUT_FILE, "w") as file:
+            for persons_range in persons_ranges:
+                 print_dict = {'{}-{}'.format(persons_range.min_age, persons_range.max_age): persons_range.names}
+                 yaml.dump(print_dict, file, default_flow_style=False)
+    except IOError:
+        print('Error writing to file {}'.format(OUTPUT_FILE))
 
 
 def main():
     data = read_json()
-    buckets = init_data(data)
+    buckets = init_ranges(data)
     persons_ranges = manage_person_ranges(buckets, data)
     write_output_file(persons_ranges)
 
