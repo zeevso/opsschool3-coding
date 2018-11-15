@@ -47,10 +47,11 @@ def parse_period(period):
 
 
 @click.command()
-@click.argument('city')
+@click.argument('city', nargs=-1)
 @click.option('--period', default='TODAY', help='period in format TODAY+n')
 @click.option('-f', is_flag=True, help='-f for Fahrenheit')
 def parse_command(city, period, f):
+    city = ' '.join(city)
     return city, period, f
 
 
@@ -96,7 +97,7 @@ def main():
                 print()
                 day_today = False
     except KeyError:
-        print('Could not print forecasts')
+        print('Could not print forecasts. Invalid argument')
         return
 
     if days_counter < (days_in_forecast - 1):
