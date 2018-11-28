@@ -10,22 +10,19 @@ Options:
 num-of-days may be in format TODAY+n
 num-of-days default value is TODAY == 1
 Use -f to override default to Fahrenheit measurements
+
+25/11/2018 Fixed on code review by Eyal Stoler
 """
 
 import click
 import requests
 from weather import Weather, Unit
 
+
 unit_dict = {
     False: (Unit.CELSIUS, 'Celsius'),
     True:  (Unit.FAHRENHEIT, 'Fahrenheit')
 }
-
-
-def parse_unit(unit_flag):
-    unit, unit_full_name = unit_dict.get(unit_flag)
-
-    return unit, unit_full_name
 
 
 def parse_period(period):
@@ -55,53 +52,51 @@ def parse_command(city, period, f):
     return city, period, f
 
 
+def output_to_stdout(forecasts, days_in_forecast, city, unit_full_name):
+    day_today = True
+    days_counter = 0
+
+    for day in forecasts.forecast[:days_in_forecast]:
+        if day_today:
+            date_to_print = 'Today'
+        else:
+            date_to_print = 'On ' + day.date
+
+        print('{date} the weather in {city} is {condition} with temperature trailing from'
+              ' {low_temp} to {high_temp} in {unit}'.format(date=date_to_print,
+                                                            city=city,
+                                                            condition=day.text.lower(),
+                                                            low_temp=day.low,
+                                                            high_temp=day.high,
+                                                            unit=unit_full_name))
+        days_counter += 1
+
+        if day_today and (days_in_forecast - 1) != 0:
+            print()
+            print('Forecast for the next {} days'.format(days_in_forecast - 1))
+            print()
+            day_today = False
+
+    if days_counter < (days_in_forecast - 1):
+        print('Sorry! The maximum days of forecast is {} :('.format(days_counter))
+
+
 def main():
     city, period, unparsed_unit = parse_command(standalone_mode=False)
-    unit, unit_full_name = parse_unit(unparsed_unit)
+    unit, unit_full_name = unit_dict.get(unparsed_unit)
     days_in_forecast = parse_period(period)
 
     try:
         weather = Weather(unit)
     except AttributeError:
         print('Could not load weather')
-        return
 
     try:
         forecasts = weather.lookup_by_location(city)
     except requests.exceptions.HTTPError:
         print('Error getting weather forecast')
-        return
 
-    day_today = True
-    days_counter = 0
-    try:
-        for day in forecasts.forecast[:days_in_forecast]:
-            if day_today:
-                date_to_print = 'Today'
-            else:
-                date_to_print = 'On ' + day.date
-
-            print(
-            '{date} the weather in {city} is {condition} with temperature trailing from {low_temp} to {high_temp} in {unit}'.
-                format(date=date_to_print,
-                       city=city,
-                       condition=day.text.lower(),
-                       low_temp=day.low,
-                       high_temp=day.high,
-                       unit=unit_full_name))
-            days_counter += 1
-
-            if day_today and (days_in_forecast-1) != 0:
-                print()
-                print('Forecast for the next {} days)'.format(days_in_forecast-1))
-                print()
-                day_today = False
-    except KeyError:
-        print('Could not print forecasts. Invalid argument')
-        return
-
-    if days_counter < (days_in_forecast - 1):
-        print('Sorry! The maximum days of forecast is {} :('.format(days_counter))
+    output_to_stdout(forecasts, days_in_forecast, city, unit_full_name)
 
 
 if __name__ == '__main__':
